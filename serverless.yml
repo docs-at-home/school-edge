@@ -1,0 +1,35 @@
+# serverless.yml
+#
+service: labyrinth-service
+
+provider:
+  name: aws
+  iamManagedPolicies:
+    - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - "*"
+
+functions:
+  # Responsible for receiving Zoom webhook and invoking ZoomUploadAsync
+  zoomUpload:
+    handler: zoomUpload.handler
+    events:
+      - http:
+          path: /media/zoom
+          method: post
+    environment:
+      STAGE: "${self:custom.stage}"
+      REGION: "${self:custom.region}"
+
+  # Responsible for uploading Zoom video to watch bucket
+  zoomUploadAsync:
+    handler: zoomUploadAsync.handler
+    timeout: 120
+    environment:
+      DESTINATION_BUCKET: "${self:custom.uploadBucketName}"
+      ZOOM_API_KEY: "${self:custom.secretParams.ZOOM_API_KEY}"
+      ZOOM_API_SECRET: "${self:custom.secretParams.ZOOM_API_SECRET}"
